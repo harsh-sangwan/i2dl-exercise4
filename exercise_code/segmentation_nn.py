@@ -1,6 +1,9 @@
 """SegmentationNN"""
 import torch
 import torch.nn as nn
+import torchvision.models as models
+import torch.nn.functional as F
+#from torchvision.models.vgg import model_urls
 
 
 class SegmentationNN(nn.Module):
@@ -12,7 +15,19 @@ class SegmentationNN(nn.Module):
         #                             YOUR CODE                                #
         ########################################################################
 
-        pass
+        self.num_classes = num_classes
+        #model_urls['vgg16'] = model_urls['vgg16'].replace('https://', 'http://')
+
+        self.vgg_feat = models.vgg19(pretrained=True).features
+        self.fcn = nn.Sequential(
+                                nn.Conv2d(512, 1024, 7),
+                                nn.ReLU(inplace=True),
+                                nn.Dropout(),
+                                nn.Conv2d(1024, 2048, 1),
+                                nn.ReLU(inplace=True),
+                                nn.Dropout(),
+                                nn.Conv2d(2048, num_classes, 1)
+                                )
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -30,7 +45,10 @@ class SegmentationNN(nn.Module):
         #                             YOUR CODE                                #
         ########################################################################
 
-        pass
+        x_input = x
+        x = self.vgg_feat(x)
+        x = self.fcn(x)
+        x = F.upsample(x, x_input.size()[2:], mode='bilinear').contiguous()
 
         ########################################################################
         #                             END OF YOUR CODE                         #
